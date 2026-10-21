@@ -18,7 +18,7 @@ window.__ModuleLoader__.load({
     const API_ACTION = '/api/dsh-workspace-session/action'
     const SETTINGS_ORDER = 40
 
-    const runtime = { translate: null }
+    const runtime = { translate: null, refreshSessions: null }
 
     const en = {
       nav: 'Workspace Sessions',
@@ -302,6 +302,12 @@ window.__ModuleLoader__.load({
         try {
           const result = await dispatch({ action, ...extra })
           await load()
+          // Imported sessions are already attached in the Host workspace
+          // ledger; ask the Client session list to pick them up so the
+          // sidebar/tree shows them without a page reload.
+          if (action === 'sync' || action === 'import') {
+            window.setTimeout(() => { runtime.refreshSessions?.() }, 250)
+          }
           setNotice({ kind: 'ok', text: tRef.current('actions.done', { message: action }) })
           return result
         } catch (cause) {
@@ -460,6 +466,21 @@ window.__ModuleLoader__.load({
         } catch {
           // Logging is best-effort.
         }
+      }
+
+      try {
+        runtime.refreshSessions = () => {
+          try {
+            const sessions = typeof ctx.get === 'function' ? ctx.get('sessions') : ctx.sessions
+            if (sessions !== undefined && sessions !== null && typeof sessions.refresh === 'function') {
+              void sessions.refresh()
+            }
+          } catch {
+            // Refreshing the session list is best-effort.
+          }
+        }
+      } catch {
+        runtime.refreshSessions = null
       }
 
       ctx.slots.inject('settings.section', () => ctx.slots.register({
