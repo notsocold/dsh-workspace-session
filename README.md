@@ -35,7 +35,7 @@
     ├── sessions/                      # ★ 工作区会话快照（随 git）
     │   └── session-1a2b.../
     │       └── session.v4.jsonl       # 第一行 header + 每行一个事件
-    ├── workspace-session.json         # 快照索引：originCwd / 事件数 / 指纹 / 最后写入机器
+    ├── workspace-session.json         # 机器本地索引（可选）：originCwd / 事件数 / 指纹；可 gitignore
     └── skills/                        # 原生项目技能（本插件不碰）
 
 ~/.dsh/sessions/                       # 原生存储（运行时，zstd）
@@ -155,9 +155,16 @@ pnpm dsh plugin --profile web add /home/<user>/work/NodeJsProjects/dsh-workspace
 建议 `.gitignore`：
 
 ```gitignore
+# 机器本地索引：每次导出都会更新时间戳，但不包含同步必需信息；
+# originCwd 会从快照第一行 header 自动恢复，因此可以安全忽略。
+.dsh/workspace-session.json
+
+# 运行时锁与冲突备份
 .dsh/sessions/**/session.lock
 .dsh/sessions/.backup/
 ```
+
+> 如果 `workspace-session.json` 已经被提交过，先执行 `git rm --cached .dsh/workspace-session.json`（只从索引移除，保留本地文件），再把上面的条目加入 `.gitignore`。
 
 ---
 

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { normalizeConfig } from '../lib/config.js'
 import { StateStore } from '../lib/state.js'
@@ -84,4 +84,23 @@ test('unknown sessions are skipped without error', async () => {
   const setup = await makeSetup()
   const result = await setup.exporter.exportSession(setup.workspace, 'session-missing')
   assert.equal(result.skipped, 'missing')
+})
+
+test('recovers originCwd from an existing snapshot when the index is missing', async () => {
+  const setup = await makeSetup()
+  setup.persistence.seed(headerFor('session-origin2', setup.workspacePath), [event(0)])
+  await setup.exporter.exportSession(setup.workspace, 'session-origin2', { force: true })
+
+  const target = snapshotPath(setup.workspacePath, 'session-origin2')
+  const lines = (await readFile(target, 'utf8')).split('\n')
+  const header = JSON.parse(lines[0])
+  header.cwd = '/original/machine/proj'
+  lines[0] = JSON.stringify(header)
+  await writeFile(target, lines.join('\n'), 'utf8')
+  await rm(join(setup.workspacePath, '.dsh', 'workspace-session.json'))
+
+  setup.persistence.sessions.get('session-origin2').events.push(event(1))
+  await setup.exporter.exportSession(setup.workspace, 'session-origin2', { force: true })
+  const parsed = parseSnapshot(await readFile(target, 'utf8'))
+  assert.equal(parsed.header.cwd, '/original/machine/proj')
 })

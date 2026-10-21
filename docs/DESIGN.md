@@ -21,6 +21,7 @@
 - **导出**：读原生会话（`open(id,'read')`）→ 序列化 → 原子写快照。
 - **导入**：读快照 → 与原生比较 → 重建/追加快照 → `attachSession`。
 - 快照中 header 的 `cwd` 保持 `originCwd`（原始项目路径），避免不同机器来回改写导致 diff；导入时再映射为本机工作区路径。
+- `workspace-session.json` 只是机器本地加速索引；exporter 在索引缺失时从快照 header 读取 `originCwd`，因此该文件可以 gitignore，不参与跨机器同步。
 
 ## 触发点
 

@@ -28,7 +28,7 @@
 | 路径 | 读写 | 内容 |
 |---|---|---|
 | `<workspace>/.dsh/sessions/<encoded-id>/session.v4.jsonl` | 插件读写 | 文本快照：第一行 header + 每行事件，`seq` 从 0 连续 |
-| `<workspace>/.dsh/workspace-session.json` | 插件读写 | 快照索引（originCwd/事件数/指纹/最后写入机器） |
+| `<workspace>/.dsh/workspace-session.json` | 插件读写 | 机器本地快照索引（originCwd/事件数/指纹）；**可 gitignore**，缺失时 exporter 从快照第一行 header 恢复 originCwd |
 | `<workspace>/.dsh/sessions/.backup/<stamp>/<id>/` | 插件写 | 冲突备份（remote.jsonl / native.jsonl） |
 | `$DSH_HOME/dsh-workspace-session/config.json` | 插件写 | 配置 |
 | `$DSH_HOME/dsh-workspace-session/state.json` | 插件写 | 本机状态（工作区/会话/冲突） |
