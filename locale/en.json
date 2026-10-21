@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Workspace Sessions",
+    "description": "Keep sessions inside the workspace directory for git sync across machines, while native sessions keep working."
+  }
+}

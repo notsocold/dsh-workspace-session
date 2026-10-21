@@ -1,0 +1,11 @@
+# dsh-workspace-session bundle patch: mount the Host half in the profile.
+#
+# This plugin does not replace the shipped session-persistence backend. The
+# native store ($DSH_HOME/sessions) stays the runtime store; this Host plugin
+# mirrors workspace-owned sessions into <workspace>/.dsh/sessions and imports
+# those snapshots back into the native store on this machine.
+#
+# The row id is stable so a profile or home patch can override config later.
+- insert:
+    - id: dsh-workspace-session
+      name: '@local/dsh-workspace-session'

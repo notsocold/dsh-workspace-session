@@ -1,0 +1,47 @@
+{
+  "name": "@local/dsh-workspace-session",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "dsh": ">=0.2.1-rc.2 <0.3.0"
+  },
+  "description": "Workspace-scoped session sync for DeepSeek Harness: mirrors workspace sessions into <workspace>/.dsh/sessions as git-friendly JSONL snapshots, imports them back on other machines, and keeps native ~/.dsh/sessions as the runtime store.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/*.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "CONTRACT.md",
+    "docs/DESIGN.md",
+    "test/*.js"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "for f in index.js client.js lib/*.js; do node --check \"$f\" || exit 1; done"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "license": "MIT"
+}
