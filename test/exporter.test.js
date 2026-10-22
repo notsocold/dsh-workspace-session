@@ -130,3 +130,14 @@ test('keeps an inherited seed marker in the exported snapshot', async () => {
   const parsed = parseSnapshot(await readFile(snapshotPath(setup.workspacePath, 'session-fork'), 'utf8'))
   assert.equal(parsed.events.length, 3)
 })
+
+test('skips a blank session that only has setup events', async () => {
+  const setup = await makeSetup()
+  setup.persistence.seed(headerFor('session-blank', setup.workspacePath), [
+    { type: 'permission/preset', seq: 0, time: 1, data: { preset: 'workspace-write' } },
+    { type: 'sandbox/mode', seq: 1, time: 2, data: { mode: 'workspace-write' } },
+  ])
+  const result = await setup.exporter.exportSession(setup.workspace, 'session-blank')
+  assert.equal(result.skipped, 'blank')
+  await assert.rejects(readFile(snapshotPath(setup.workspacePath, 'session-blank'), 'utf8'))
+})

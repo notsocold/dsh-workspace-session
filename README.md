@@ -85,6 +85,8 @@ pnpm dsh plugin --profile web add /home/<user>/work/NodeJsProjects/dsh-workspace
 | `importPollMs` | `60000` | 定时轮询间隔；`0` 关闭 |
 | `conflictPolicy` | `keep-both` | `keep-both` / `local-wins` / `remote-wins` |
 | `snapshotMaxBytes` | `67108864` | 单快照最大字节数 |
+| `exportBlankSessions` | `false` | 是否导出空白会话（只有权限/沙箱/审批初始化事件，没有对话） |
+| `importBlankSessions` | `false` | 是否导入空白会话快照 |
 
 ---
 

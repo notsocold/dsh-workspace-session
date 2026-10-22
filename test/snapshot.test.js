@@ -4,6 +4,7 @@ import {
   SESSION_FORMAT_VERSION,
   findInheritedEventCount,
   trimTrailingResumeMarker,
+  isBlankSession,
   importHeader,
   normalizeEventForCompare,
   parseSnapshot,
@@ -98,4 +99,15 @@ test('trimTrailingResumeMarker drops only plain trailing resume markers', () => 
   // A marker in the middle is content, not a trailing boundary.
   assert.equal(trimTrailingResumeMarker([inherited, { type: 'turn/start', seq: 1, time: 2, data: {} }]).length, 2)
   assert.equal(trimTrailingResumeMarker([]).length, 0)
+})
+
+test('isBlankSession treats setup-only logs as blank', () => {
+  const setup = [
+    { type: 'permission/preset', seq: 0, time: 1, data: { preset: 'workspace-write' } },
+    { type: 'sandbox/mode', seq: 1, time: 2, data: { mode: 'workspace-write' } },
+    { type: 'approval/policy', seq: 2, time: 3, data: { policy: 'ask' } },
+  ]
+  assert.equal(isBlankSession(setup), true)
+  assert.equal(isBlankSession([...setup, { type: 'turn/start', seq: 3, time: 4, data: { turn: 1 } }]), false)
+  assert.equal(isBlankSession([]), true)
 })

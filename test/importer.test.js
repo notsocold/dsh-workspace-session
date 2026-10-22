@@ -125,3 +125,14 @@ test('imported snapshot content is readable through the mock store', async () =>
   const text = await readFile(join(setup.workspacePath, '.dsh', 'sessions', encodeSegment('session-read'), 'session.v4.jsonl'), 'utf8')
   assert.equal(parseSnapshot(text).header.id, 'session-read')
 })
+
+test('skips importing a blank snapshot', async () => {
+  const setup = await makeSetup()
+  await writeSnapshot(setup.workspacePath, 'session-blank', OLD_CWD, [
+    { type: 'permission/preset', seq: 0, time: 1, data: { preset: 'workspace-write' } },
+    { type: 'sandbox/mode', seq: 1, time: 2, data: { mode: 'workspace-write' } },
+  ])
+  const results = await setup.importer.importWorkspace(setup.workspace)
+  assert.equal(results[0].skipped, 'blank')
+  assert.equal(setup.persistence.sessions.has('session-blank'), false)
+})
