@@ -104,3 +104,29 @@ test('recovers originCwd from an existing snapshot when the index is missing', a
   const parsed = parseSnapshot(await readFile(target, 'utf8'))
   assert.equal(parsed.header.cwd, '/original/machine/proj')
 })
+
+test('drops a trailing plain resume marker from the exported snapshot', async () => {
+  const setup = await makeSetup()
+  setup.persistence.seed(headerFor('session-resume', setup.workspacePath), [
+    event(0),
+    { type: 'session/end-seed', seq: 1, time: 2, data: {} },
+  ])
+  await setup.exporter.exportSession(setup.workspace, 'session-resume')
+  const parsed = parseSnapshot(await readFile(snapshotPath(setup.workspacePath, 'session-resume'), 'utf8'))
+  assert.equal(parsed.events.length, 1)
+  assert.equal(parsed.events[0].type, 'turn/start')
+  const second = await setup.exporter.exportSession(setup.workspace, 'session-resume')
+  assert.equal(second.skipped, 'unchanged')
+})
+
+test('keeps an inherited seed marker in the exported snapshot', async () => {
+  const setup = await makeSetup()
+  setup.persistence.seed(headerFor('session-fork', setup.workspacePath), [
+    event(0),
+    { type: 'session/end-seed', seq: 1, time: 2, data: { inherited: true } },
+    event(2),
+  ])
+  await setup.exporter.exportSession(setup.workspace, 'session-fork')
+  const parsed = parseSnapshot(await readFile(snapshotPath(setup.workspacePath, 'session-fork'), 'utf8'))
+  assert.equal(parsed.events.length, 3)
+})

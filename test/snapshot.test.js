@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   SESSION_FORMAT_VERSION,
   findInheritedEventCount,
+  trimTrailingResumeMarker,
   importHeader,
   normalizeEventForCompare,
   parseSnapshot,
@@ -86,4 +87,15 @@ test('encodeSegment keeps readable ids and escapes separators', () => {
   assert.equal(encodeSegment('session-abc'), 'session-abc')
   assert.equal(encodeSegment('a/b'), 'a~002Fb')
   assert.equal(encodeSegment('..'), '~002E~002E')
+})
+
+test('trimTrailingResumeMarker drops only plain trailing resume markers', () => {
+  const plain = { type: 'session/end-seed', seq: 1, time: 2, data: {} }
+  const first = { type: 'turn/start', seq: 0, time: 1, data: {} }
+  assert.equal(trimTrailingResumeMarker([first, plain]).length, 1)
+  const inherited = { type: 'session/end-seed', seq: 1, time: 2, data: { inherited: true } }
+  assert.equal(trimTrailingResumeMarker([first, inherited]).length, 2)
+  // A marker in the middle is content, not a trailing boundary.
+  assert.equal(trimTrailingResumeMarker([inherited, { type: 'turn/start', seq: 1, time: 2, data: {} }]).length, 2)
+  assert.equal(trimTrailingResumeMarker([]).length, 0)
 })
