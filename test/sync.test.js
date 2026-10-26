@@ -43,3 +43,16 @@ test('publishAdded survives a composition without the list feed', async () => {
   ctx.emit = () => { throw new Error('no event feed') }
   assert.doesNotThrow(() => syncer.publishAdded(makeWorkspace('/ws'), { id: 's', eventCount: 0 }))
 })
+
+test('flushDirty never rejects when the context is disposed', async () => {
+  const { syncer } = await makeSyncer()
+  const dir = tempDir('ws-')
+  const workspace = makeWorkspace(dir)
+  const ctx = syncer.ctx
+  Object.defineProperty(ctx, 'workspaceRegistry', { get() { return { list: () => [workspace] } } })
+  Object.defineProperty(ctx, 'sessionPersistence', {
+    get() { throw new Error('cannot get required service "sessionPersistence" in inactive context') },
+  })
+  syncer.dirty.set('session-x', { id: 'session-x', cwd: dir })
+  await assert.doesNotReject(() => syncer.flushDirty())
+})

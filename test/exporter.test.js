@@ -1,11 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { normalizeConfig } from '../lib/config.js'
 import { StateStore } from '../lib/state.js'
 import { Exporter } from '../lib/exporter.js'
-import { parseSnapshot, snapshotPath } from '../lib/snapshot.js'
+import { parseSnapshot, serializeSnapshot, snapshotPath } from '../lib/snapshot.js'
 import { event, makeContext, makeWorkspace, MockPersistence, tempDir } from './helpers.js'
 
 const OTHER_CWD = '/home/alice/work/other'
@@ -140,4 +140,37 @@ test('skips a blank session that only has setup events', async () => {
   const result = await setup.exporter.exportSession(setup.workspace, 'session-blank')
   assert.equal(result.skipped, 'blank')
   await assert.rejects(readFile(snapshotPath(setup.workspacePath, 'session-blank'), 'utf8'))
+})
+
+test('refuses to overwrite a snapshot that is ahead of the native log', async () => {
+  const setup = await makeSetup()
+  setup.persistence.seed(headerFor('session-guard', setup.workspacePath), [event(0), event(1)])
+  const dir = join(setup.workspacePath, '.dsh', 'sessions', 'session-guard')
+  await mkdir(dir, { recursive: true })
+  const ahead = serializeSnapshot({
+    header: { type: 'session', ...headerFor('session-guard', setup.workspacePath) },
+    events: [event(0), event(1), event(2), event(3)],
+  })
+  await writeFile(join(dir, 'session.v4.jsonl'), ahead, 'utf8')
+
+  const result = await setup.exporter.exportSession(setup.workspace, 'session-guard', { force: true })
+  assert.equal(result.skipped, 'snapshot-ahead')
+  const parsed = parseSnapshot(await readFile(join(dir, 'session.v4.jsonl'), 'utf8'))
+  assert.equal(parsed.events.length, 4)
+})
+
+test('returns inactive instead of throwing when the plugin context is disposed', async () => {
+  const workspacePath = tempDir('ws-')
+  const home = tempDir('home-')
+  const persistence = new MockPersistence()
+  const workspace = makeWorkspace(workspacePath)
+  const state = new StateStore({ home })
+  await state.load()
+  const ctx = makeContext({ persistence, workspaces: [workspace] })
+  Object.defineProperty(ctx, 'sessionPersistence', {
+    get() { throw new Error('cannot get required service "sessionPersistence" in inactive context') },
+  })
+  const exporter = new Exporter(ctx, { config: normalizeConfig({}), state })
+  const result = await exporter.exportSession(workspace, 'session-x')
+  assert.equal(result.skipped, 'inactive')
 })
