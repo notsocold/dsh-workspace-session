@@ -87,6 +87,7 @@ pnpm dsh plugin --profile web add /home/<user>/work/NodeJsProjects/dsh-workspace
 | `snapshotMaxBytes` | `67108864` | 单快照最大字节数 |
 | `exportBlankSessions` | `false` | 是否导出空白会话（只有权限/沙箱/审批初始化事件，没有对话） |
 | `importBlankSessions` | `false` | 是否导入空白会话快照 |
+| `manageGitignore` | `true` | 同步时自动补齐工作区 `.gitignore` 的管理规则 |
 
 ---
 
@@ -166,7 +167,14 @@ pnpm dsh plugin --profile web add /home/<user>/work/NodeJsProjects/dsh-workspace
 .dsh/sessions/.backup/
 ```
 
-> 如果 `workspace-session.json` 已经被提交过，先执行 `git rm --cached .dsh/workspace-session.json`（只从索引移除，保留本地文件），再把上面的条目加入 `.gitignore`。
+> 插件会**自动**把上面的规则补进每个工作区的 `.gitignore`（`manageGitignore` 默认开启，只追加缺失项，不删除原有规则）。
+>
+> 注意：`.gitignore` 对**已经被 git 跟踪**的文件无效。如果 `workspace-session.json` 之前已被提交，插件无法替你做 `git rm --cached`（这属于修改 git 索引，插件只会在日志/状态里提示）。每个这样的仓库需要手动执行一次：
+>
+> ```bash
+> git rm --cached .dsh/workspace-session.json
+> git commit -m "chore: ignore DSH workspace-session index"
+> ```
 
 ---
 
